@@ -9,11 +9,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Serve static files (images)
+app.use('/images', express.static('images'));  // Add this line to serve static files from the "images" folder
+
+
 // MongoDB connection
-mongoose.connect('mongodb://localhost:27017/textToHandwritten', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-}).then(() => console.log('Connected to MongoDB'))
+mongoose.connect('mongodb://localhost:27017/myDatabase').then(() => console.log('Connected to MongoDB'))
 .catch((err) => console.log(err));
 
 // Routes

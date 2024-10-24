@@ -1,5 +1,5 @@
 const express = require('express');
-const { spawn } = require('child_process');  // Import child_process to spawn Python process
+const { spawn } = require('child_process');
 const Text = require('../models/Text');
 
 const router = express.Router();
@@ -8,49 +8,48 @@ const router = express.Router();
 router.post('/', async (req, res) => {
   const { text, handwritingStyle } = req.body;
 
-  // Check for missing fields
   if (!text || !handwritingStyle) {
     return res.status(400).json({ success: false, message: 'Text and handwriting style are required' });
   }
 
   try {
-    // Save text and handwriting style to the database
-    const newText = new Text({
-      text,
-      handwritingStyle,
-    });
+    const newText = new Text({ text, handwritingStyle });
     await newText.save();
 
-    // Call Python script to convert the text
+    // Call Python script
     const python = spawn('python', ['convert_to_handwritten.py', text, handwritingStyle]);
 
-    // Capture the output from the Python script
+    // Capture Python script output
     python.stdout.on('data', (data) => {
-      const convertedText = data.toString().trim(); // Trim any whitespace
-
+      const convertedText = data.toString().trim();
+      // Send response here
       res.status(200).json({
         success: true,
         message: 'Text converted successfully',
-        convertedText,
+        convertedText, // Should contain the path to the handwritten image
       });
     });
 
-    // Handle any errors
+    // Handle errors in Python script
     python.stderr.on('data', (data) => {
       console.error(`Python error: ${data}`);
-      res.status(500).json({ success: false, message: 'Error during conversion' });
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, message: 'Error during conversion' });
+      }
     });
 
-    // Handle process exit
+    // Handle process exit (only log, don't send a new response)
     python.on('close', (code) => {
-      if (code !== 0) {
-        res.status(500).json({ success: false, message: 'Python process exited with code ' + code });
+      if (code !== 0 && !res.headersSent) {
+        console.error(`Python process exited with code ${code}`);
       }
     });
 
   } catch (err) {
     console.error('Error:', err);
-    res.status(500).json({ success: false, message: err.message });
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, message: err.message });
+    }
   }
 });
 

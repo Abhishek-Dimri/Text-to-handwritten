@@ -9,7 +9,7 @@ const TextForm = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [convertedText, setConvertedText] = useState('');
+  const [imageUrl, setImageUrl] = useState('');  // State to store the image URL
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -21,7 +21,10 @@ const TextForm = () => {
         handwritingStyle: style,
       });
 
-      setConvertedText(response.data.convertedText);  // Display the converted text
+      // Assuming response.data contains the image file name (e.g., "handwritten_text.png")
+      // Append a timestamp to the image URL to avoid caching issues
+      const uniqueImageUrl = `http://localhost:5000/images/${response.data.convertedText}?t=${new Date().getTime()}`;
+      setImageUrl(uniqueImageUrl);
     } catch (err) {
       setError('Error submitting text. Please try again.');
       console.error('Error:', err);
@@ -55,10 +58,11 @@ const TextForm = () => {
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      {convertedText && (
+      {/* Display the image if it's generated */}
+      {imageUrl && (
         <div>
-          <h2>Converted Text:</h2>
-          <p>{convertedText}</p>
+          <h2>Generated Handwritten Image:</h2>
+          <img src={imageUrl} alt="Handwritten Text" style={{ maxWidth: '100%', height: 'auto' }} />
         </div>
       )}
     </div>
